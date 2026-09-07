@@ -1,0 +1,7 @@
+# Auto-detect text files and perform LF normalization
+* text=auto
+
+# Machine learning models and binary assets
+*.pkl binary
+*.json text
+*.txt text

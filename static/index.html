@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS // AI Cyber Defense & Real-Time Threat Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+    <header class="soc-header">
+        <div class="header-left">
+            <div class="logo-shield">
+                <span class="shield-icon">🛡️</span>
+                <div class="logo-text">
+                    <div class="brand-title">IDS </div>
+                    <div class="brand-subtitle">AI-POWERED INTRUSION DETECTION & LOCAL DEFENDER</div>
+                </div>
+            </div>
+            <div class="engine-badge" id="engineStatusBadge">
+                <span class="pulse-dot"></span>
+                <span id="engineStatusText">SYSTEM IDLE</span>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="control-group">
+                <label class="ctrl-label">TRAFFIC SOURCE</label>
+                <div class="soc-select"
+                    style="background:#09151e;border-color:rgba(0,255,157,0.4);color:#00ff9d;display:flex;align-items:center;gap:6px;cursor:default;font-weight:700;">
+                    <span
+                        style="width:7px;height:7px;border-radius:50%;background:#00ff9d;box-shadow:0 0 6px #00ff9d;"></span>
+                    LIVE PC INTERFACE (Wi-Fi / Ethernet)
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="modelSelector" class="ctrl-label">ACTIVE AI MODEL</label>
+                <select id="modelSelector" class="soc-select">
+                    <option value="xgboost" selected>XGBoost Booster (F1: 95.4%)</option>
+                    <option value="lightgbm">LightGBM Booster (Ultra-Fast)</option>
+                    <option value="ensemble">Ensemble Blended (XGB + LGB)</option>
+                </select>
+            </div>
+            <div class="control-btn-group">
+                <button id="btnStart" class="soc-btn btn-start" title="Deploy and start live IDS engine">
+                    <span class="btn-icon">▶</span> START IDS
+                </button>
+                <button id="btnPause" class="soc-btn btn-pause" title="Pause live inspection" disabled>
+                    <span class="btn-icon">⏸</span> PAUSE
+                </button>
+                <button id="btnStop" class="soc-btn btn-stop" title="Stop IDS engine" disabled>
+                    <span class="btn-icon">⏹</span> STOP
+                </button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="btnNotifConfig" class="soc-btn btn-ghost"
+                title="Device & Windows Defender Notification Settings">
+                <span class="btn-icon">🔔</span> NOTIFICATIONS
+            </button>
+            <button id="btnModelMetrics" class="soc-btn btn-ghost" title="View Model Benchmarks & Feature Architecture">
+                <span class="btn-icon">📊</span> MODEL BENCHMARKS
+            </button>
+            <button id="btnAudioToggle" class="soc-btn btn-icon-only" title="Toggle Threat Siren Audio">
+                <span id="audioIcon">🔊</span>
+            </button>
+        </div>
+    </header>
+    <main class="soc-container">
+        <div id="threatAlertBanner" class="threat-banner hidden">
+            <div class="threat-pulse-glow"></div>
+            <div class="threat-content">
+                <div class="threat-icon-box">⚠️</div>
+                <div class="threat-info">
+                    <div class="threat-header-line">
+                        <span class="threat-badge" id="threatSeverityBadge">CRITICAL THREAT</span>
+                        <span class="threat-title" id="threatTitleText">DoS Flooding Attack Detected</span>
+                        <span class="threat-timestamp" id="threatTimeText">13:45:12</span>
+                    </div>
+                    <div class="threat-desc" id="threatDescText">
+                        Source: <strong id="threatSrcIp">103.21.44.12</strong> -> Target Port: <strong
+                            id="threatDstPort">80 (HTTP)</strong> | Confidence: <strong
+                            id="threatConfidence">99.4%</strong> | Model: <span id="threatModel">XGBoost</span>
+                    </div>
+                </div>
+                <div class="threat-notif-status">
+                    <div class="device-alert-chip">
+                        <span class="chip-icon">💻</span>
+                        <span class="chip-text" id="deviceAlertStatus">Windows Defender Alert Dispatched</span>
+                    </div>
+                    <button id="btnDismissAlert" class="btn-dismiss">DISMISS</button>
+                </div>
+            </div>
+        </div>
+        <section class="kpi-grid">
+            <div class="kpi-card card-cyan">
+                <div class="kpi-header">
+                    <span class="kpi-title">TOTAL FLOWS INSPECTED</span>
+                    <span class="kpi-icon">🌐</span>
+                </div>
+                <div class="kpi-value" id="kpiTotalFlows">0</div>
+                <div class="kpi-subtext">Live packets & flow records</div>
+            </div>
+            <div class="kpi-card card-green">
+                <div class="kpi-header">
+                    <span class="kpi-title">BENIGN TRAFFIC (NORMAL)</span>
+                    <span class="kpi-icon">✅</span>
+                </div>
+                <div class="kpi-value" id="kpiBenignFlows">0</div>
+                <div class="kpi-subtext"><span id="kpiBenignPct">100.0%</span> verified safe traffic</div>
+            </div>
+            <div class="kpi-card card-red">
+                <div class="kpi-header">
+                    <span class="kpi-title">THREATS INTERCEPTED</span>
+                    <span class="kpi-icon">🚨</span>
+                </div>
+                <div class="kpi-value" id="kpiThreatsDetected">0</div>
+                <div class="kpi-subtext" id="kpiThreatSubtext">0 malicious attacks blocked</div>
+            </div>
+            <div class="kpi-card card-purple">
+                <div class="kpi-header">
+                    <span class="kpi-title">INSPECTION LATENCY</span>
+                    <span class="kpi-icon">⚡</span>
+                </div>
+                <div class="kpi-value"><span id="kpiLatency">0.45</span> <span class="kpi-unit">ms</span></div>
+                <div class="kpi-subtext">Real-time inference speed</div>
+            </div>
+            <div class="kpi-card card-amber">
+                <div class="kpi-header">
+                    <span class="kpi-title">CURRENT BANDWIDTH</span>
+                    <span class="kpi-icon">📶</span>
+                </div>
+                <div class="kpi-value"><span id="kpiBandwidth">0.0</span> <span class="kpi-unit">KB/s</span></div>
+                <div class="kpi-subtext">↑ <span id="kpiOutRate">0</span> KB/s | ↓ <span id="kpiInRate">0</span> KB/s
+                </div>
+            </div>
+        </section>
+        <section class="testbench-card">
+            <div class="testbench-header">
+                <div class="tb-title">
+                    <span class="tb-icon">⚡</span>
+                    <span>THREAT SIMULATOR & DEFENSE TEST BENCH</span>
+                </div>
+                <div class="tb-caption">Inject simulated multi-class attack flows to test real-time ML detection &
+                    native Windows Defender toast notifications</div>
+            </div>
+            <div class="testbench-actions">
+                <button class="btn-sim sim-dos" data-attack="DoS">
+                    <span class="sim-dot"></span> DoS Flood
+                </button>
+                <button class="btn-sim sim-ddos" data-attack="DDoS">
+                    <span class="sim-dot"></span> DDoS Attack
+                </button>
+                <button class="btn-sim sim-scan" data-attack="scanning">
+                    <span class="sim-dot"></span> Port Scan (Recon)
+                </button>
+                <button class="btn-sim sim-brute" data-attack="Brute Force">
+                    <span class="sim-dot"></span> Brute Force (SSH/RDP)
+                </button>
+                <button class="btn-sim sim-inject" data-attack="injection">
+                    <span class="sim-dot"></span> SQL Injection
+                </button>
+                <button class="btn-sim sim-ransom" data-attack="ransomware">
+                    <span class="sim-dot"></span> Ransomware Vector
+                </button>
+                <button class="btn-sim sim-xss" data-attack="xss">
+                    <span class="sim-dot"></span> XSS Attack
+                </button>
+                <button class="btn-sim sim-benign" data-attack="Benign">
+                    <span class="sim-dot-green"></span> Benign Flow Pulse
+                </button>
+            </div>
+        </section>
+        <section class="visualizations-grid">
+            <div class="soc-card chart-card-wide">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="chart-bullet cyan"></span>
+                        LIVE NETWORK TRAFFIC THROUGHPUT (BYTES / SEC)
+                    </div>
+                    <div class="card-meta">Real-Time Inbound vs Outbound Flow Dynamics</div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="throughputChart"></canvas>
+                </div>
+            </div>
+            <div class="soc-card chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="chart-bullet purple"></span>
+                        FLOW DURATION & PACKET LATENCY (MS)
+                    </div>
+                    <div class="card-meta">Normal Flow Timing Envelope</div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="durationChart"></canvas>
+                </div>
+            </div>
+            <div class="soc-card chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="chart-bullet green"></span>
+                        PROTOCOL & TCP FLAG BREAKDOWN
+                    </div>
+                    <div class="card-meta">L7 Protocols & Transmission Flags</div>
+                </div>
+                <div class="chart-wrapper doughnut-wrapper">
+                    <canvas id="protocolChart"></canvas>
+                </div>
+            </div>
+            <div class="soc-card chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="chart-bullet amber"></span>
+                        FEATURE ANOMALY RADAR SCOPE
+                    </div>
+                    <div class="card-meta">20-Dimensional ML Feature Signatures</div>
+                </div>
+                <div class="chart-wrapper radar-wrapper">
+                    <canvas id="featureRadarChart"></canvas>
+                </div>
+            </div>
+            <div class="soc-card chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="chart-bullet cyan"></span>
+                        LOCAL DEVICE & OS METRICS
+                    </div>
+                    <div class="card-meta">Host Hardware & Socket Counters</div>
+                </div>
+                <div class="host-telemetry-body">
+                    <div class="host-metric-row">
+                        <span class="hm-label">CPU Utilization</span>
+                        <div class="hm-bar-box">
+                            <div class="hm-bar" id="cpuBar" style="width: 15%;"></div>
+                        </div>
+                        <span class="hm-val" id="cpuVal">15%</span>
+                    </div>
+                    <div class="host-metric-row">
+                        <span class="hm-label">Memory Used</span>
+                        <div class="hm-bar-box">
+                            <div class="hm-bar purple-bar" id="memBar" style="width: 42%;"></div>
+                        </div>
+                        <span class="hm-val" id="memVal">42%</span>
+                    </div>
+                    <div class="host-details-grid">
+                        <div class="hd-item">
+                            <span class="hd-label">Active Host Packets Sent</span>
+                            <span class="hd-val" id="hostPktsSent">0</span>
+                        </div>
+                        <div class="hd-item">
+                            <span class="hd-label">Active Host Packets Recv</span>
+                            <span class="hd-val" id="hostPktsRecv">0</span>
+                        </div>
+                        <div class="hd-item">
+                            <span class="hd-label">Windows Defender Status</span>
+                            <span class="hd-val green-text">ACTIVE & HOOKED</span>
+                        </div>
+                        <div class="hd-item">
+                            <span class="hd-label">Stream Multiplier</span>
+                            <span class="hd-val" id="streamSpeedLabel">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="soc-card flow-table-card">
+            <div class="card-header flow-table-header">
+                <div class="flow-header-left">
+                    <div class="card-title">
+                        <span class="chart-bullet green"></span>
+                        LIVE NETWORK FLOW ACTIVITY STREAM
+                    </div>
+                    <div class="card-meta">Real-time classification of all incoming network packet flows</div>
+                </div>
+                <div class="flow-filters">
+                    <button class="filter-btn active" data-filter="all">ALL FLOWS</button>
+                    <button class="filter-btn" data-filter="benign">BENIGN ONLY</button>
+                    <button class="filter-btn" data-filter="threat">THREATS ONLY</button>
+                    <button id="btnClearTable" class="btn-clear" title="Clear table rows">CLEAR</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="soc-table" id="flowTable">
+                    <thead>
+                        <tr>
+                            <th>TIME</th>
+                            <th>SOURCE (CLIENT / ORIGIN)</th>
+                            <th>DESTINATION (TARGET / SERVER)</th>
+                            <th>PROTO</th>
+                            <th>IN BYTES</th>
+                            <th>OUT BYTES</th>
+                            <th>DURATION</th>
+                            <th>CLASSIFICATION</th>
+                            <th>CONFIDENCE</th>
+                            <th>MODEL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flowTableBody">
+                        <tr class="empty-row">
+                            <td colspan="10">Engine idle. Click <strong>START IDS</strong> to begin live inspection.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <div id="notifModal" class="soc-modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>🛡️</span> DEVICE & WINDOWS DEFENDER NOTIFICATION SETTINGS
+                </div>
+                <button class="btn-close-modal" id="btnCloseNotifModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">Native Windows Defender Toast Alerts</span>
+                        <span class="setting-desc">Pops up interactive Windows 10/11 system notifications directly on
+                            your PC lockscreen and Action Center when attacks are detected</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkDesktopToast" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">Threat Alarm Audio Chime</span>
+                        <span class="setting-desc">Plays alert chime / siren when threats are flagged</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkSoundAlert" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item-block">
+                    <div class="setting-info">
+                        <span class="setting-name">Alert Cooldown Period (<span id="cooldownValLabel">10</span>
+                            seconds)</span>
+                        <span class="setting-desc">Prevents notification flooding during continuous DDoS or brute force
+                            bursts</span>
+                    </div>
+                    <input type="range" id="rngCooldown" min="2" max="60" value="10" class="soc-range">
+                </div>
+                <div class="setting-item-block">
+                    <div class="setting-info">
+                        <span class="setting-name">Minimum Confidence Threshold (<span
+                                id="confValLabel">65%</span>)</span>
+                        <span class="setting-desc">Only trigger device notifications for threats meeting this confidence
+                            level</span>
+                    </div>
+                    <input type="range" id="rngMinConfidence" min="30" max="95" value="65" class="soc-range">
+                </div>
+                <div class="setting-item-block">
+                    <div class="setting-info">
+                        <span class="setting-name">Minimum Threat Severity</span>
+                        <span class="setting-desc">Filter alerts by severity rating</span>
+                    </div>
+                    <select id="selMinSeverity" class="soc-select">
+                        <option value="MEDIUM" selected>MEDIUM (All attacks & scans)</option>
+                        <option value="HIGH">HIGH (Brute force, bots, exploits)</option>
+                        <option value="CRITICAL">CRITICAL ONLY (DoS, DDoS, Ransomware, Injections)</option>
+                    </select>
+                </div>
+                <div class="test-notif-box">
+                    <div class="tn-text">
+                        <strong>Test Device Notification:</strong> Click below to verify that your Windows system
+                        displays toast notifications and sounds the alert chime.
+                    </div>
+                    <button id="btnSendTestNotif" class="soc-btn btn-cyan">
+                        <span>🔔</span> SEND TEST WINDOWS NOTIFICATION
+                    </button>
+                    <div id="testNotifStatus" class="test-status-msg"></div>
+                </div>
+                <div class="webhook-section">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">Optional Forwarding Webhook</span>
+                            <span class="setting-desc">Forward threat JSON payloads to Discord, Telegram, or custom
+                                webhook</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="chkWebhook">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <input type="text" id="txtWebhookUrl" class="soc-input"
+                        placeholder="https://webhook.site/your-custom-endpoint">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnSaveNotifConfig" class="soc-btn btn-start">SAVE CONFIGURATION</button>
+            </div>
+        </div>
+    </div>
+    <div id="metricsModal" class="soc-modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card modal-card-large">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>📊</span> MODEL BENCHMARK COMPARISON & 20-FEATURE ARCHITECTURE
+                </div>
+                <button class="btn-close-modal" id="btnCloseMetricsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bench-summary-text">
+                    Evaluation results from the <strong>NF-UQ-NIDS-v2</strong> benchmark dataset (~76M flows) comparing
+                    XGBoost and LightGBM models across deduplicated test sets.
+                </div>
+                <div class="table-container">
+                    <table class="soc-table">
+                        <thead>
+                            <tr>
+                                <th>METRIC</th>
+                                <th>XGBOOST BOOSTER</th>
+                                <th>LIGHTGBM BOOSTER</th>
+                                <th>BEST PERFORMER</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricsTableBody">
+                            <tr>
+                                <td>Weighted F1 Score</td>
+                                <td>0.9510 (95.1%)</td>
+                                <td>0.7800 (78.0%)</td>
+                                <td><span class="badge-win">XGBoost (+17.1%)</span></td>
+                            </tr>
+                            <tr>
+                                <td>Macro F1 Score</td>
+                                <td>0.5704</td>
+                                <td>0.1165</td>
+                                <td><span class="badge-win">XGBoost</span></td>
+                            </tr>
+                            <tr>
+                                <td>Weighted Precision</td>
+                                <td>0.9550 (95.5%)</td>
+                                <td>0.7564 (75.6%)</td>
+                                <td><span class="badge-win">XGBoost</span></td>
+                            </tr>
+                            <tr>
+                                <td>Weighted Recall</td>
+                                <td>0.9556 (95.6%)</td>
+                                <td>0.8174 (81.7%)</td>
+                                <td><span class="badge-win">XGBoost</span></td>
+                            </tr>
+                            <tr>
+                                <td>Training Time</td>
+                                <td>13,599.62 sec</td>
+                                <td>6,855.33 sec</td>
+                                <td><span class="badge-win">LightGBM (Faster)</span></td>
+                            </tr>
+                            <tr>
+                                <td>Inference Time</td>
+                                <td>12.16 sec</td>
+                                <td>27.85 sec</td>
+                                <td><span class="badge-win">XGBoost (Faster)</span></td>
+                            </tr>
+                            <tr>
+                                <td>Average False Positive Rate</td>
+                                <td>0.46%</td>
+                                <td>2.99%</td>
+                                <td><span class="badge-win">XGBoost (Lowest FPR)</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="features-box">
+                    <div class="features-title">15 Selected Key Flow Features:</div>
+                    <div class="features-chips" id="featureChipsContainer">
+                        <span class="f-chip">RETRANSMITTED_OUT_BYTES</span>
+                        <span class="f-chip">DNS_QUERY_ID</span>
+                        <span class="f-chip">IN_BYTES</span>
+                        <span class="f-chip">TCP_FLAGS</span>
+                        <span class="f-chip">LONGEST_FLOW_PKT</span>
+                        <span class="f-chip">DST_TO_SRC_AVG_THROUGHPUT</span>
+                        <span class="f-chip">PROTOCOL</span>
+                        <span class="f-chip">FLOW_DURATION_MILLISECONDS</span>
+                        <span class="f-chip">NUM_PKTS_UP_TO_128_BYTES</span>
+                        <span class="f-chip">DURATION_IN</span>
+                        <span class="f-chip">MIN_TTL</span>
+                        <span class="f-chip">OUT_BYTES</span>
+                        <span class="f-chip">TCP_WIN_MAX_OUT</span>
+                        <span class="f-chip">IN_PKTS</span>
+                        <span class="f-chip">L7_PROTO</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="soc-btn btn-ghost" id="btnCloseMetricsModal2">CLOSE</button>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
